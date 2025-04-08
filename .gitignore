@@ -1,0 +1,19 @@
+# Python-spezifische Dateien
+__pycache__/
+*.py[cod]
+*.env              # Ignoriert alle .env-Dateien (für Passwörter)
+venv/              # Python-Virtualenv
+
+# Nutzerdaten/Konfiguration
+secrets.json
+config.json
+database.db       # SQLite-Datenbank
+users.json    # Nutzerdaten (falls du JSON nutzt)
+
+# Betriebssystem-spezifische Dateien
+.DS_Store         # macOS
+Thumbs.db         # Windows
+
+# IDE/Editor-spezifische Dateien
+.vscode/
+.idea/
