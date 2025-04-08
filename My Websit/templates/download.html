@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dateien herunterladen</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+</head>
+<body>
+    <div class="flash-messages">
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                    <div class="flash-message {{ category }}">
+                        {{ message }}
+                        <button class="close-btn" onclick="this.parentElement.remove()">&times;</button>
+                    </div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+    </div>
+
+    <div class="container">
+        <div class="card">
+            <div class="card-header">
+                <h2 class="text-center">
+                    <i class="fas fa-download"></i>
+                    Dateien herunterladen
+                </h2>
+            </div>
+            <div class="card-body">
+                <div class="files-tabs">
+                    <button class="tab-btn active" onclick="openTab(event, 'public')">
+                        <i class="fas fa-globe"></i>
+                        Öffentlich
+                    </button>
+                    {% if files.groups %}
+                        <button class="tab-btn" onclick="openTab(event, 'groups')">
+                            <i class="fas fa-users"></i>
+                            Gruppen
+                        </button>
+                    {% endif %}
+                </div>
+
+                <div id="public" class="tab-content active">
+                    <h3>
+                        <i class="fas fa-folder-open"></i>
+                        Öffentliche Dateien
+                    </h3>
+                    <div class="files-section">
+                        {% if files.public %}
+                            <ul class="file-list">
+                                {% for file in files.public %}
+                                    <li class="file-item">
+                                        <i class="fas fa-file"></i> 
+                                        {{ file }}
+                                        <a href="{{ url_for('download_file', filepath='public/' + file) }}" class="btn btn-primary">
+                                            <i class="fas fa-download"></i>
+                                            Herunterladen
+                                        </a>
+                                    </li>
+                                {% endfor %}
+                            </ul>
+                        {% else %}
+                            <p class="no-files">Keine öffentlichen Dateien verfügbar.</p>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <div id="groups" class="tab-content">
+                    <h3>
+                        <i class="fas fa-folder"></i>
+                        Gruppen-Dateien
+                    </h3>
+                    {% if files.groups %}
+                        {% for group, group_files in files.groups.items() %}
+                            <div class="group-section">
+                                <h4>
+                                    <i class="fas fa-users"></i>
+                                    {{ group }}
+                                </h4>
+                                <div class="files-section">
+                                    {% if group_files %}
+                                        <ul class="file-list">
+                                            {% for file in group_files %}
+                                                <li class="file-item">
+                                                    <span class="file-name">
+                                                        <i class="fas fa-file"></i>
+                                                        {{ file }}
+                                                    </span>
+                                                    <a href="{{ url_for('download_file', filepath='groups/' + group + '/' + file) }}" class="btn btn-primary">
+                                                        <i class="fas fa-download"></i>
+                                                        Herunterladen
+                                                    </a>
+                                                </li>
+                                            {% endfor %}
+                                        </ul>
+                                    {% else %}
+                                        <p class="no-files">Keine Dateien in dieser Gruppe.</p>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        {% endfor %}
+                    {% else %}
+                        <p class="no-files">Sie haben keine Gruppenzugehörigkeiten oder es sind keine Gruppen-Dateien verfügbar.</p>
+                    {% endif %}
+                </div>
+            </div>
+            <div class="card-footer text-center">
+                <a href="{{ url_for('home') }}" class="btn btn-secondary">
+                    <i class="fas fa-home"></i>
+                    Zurück zur Startseite
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function openTab(evt, tabName) {
+            var i, tabContent, tabButtons;
+            
+            tabContent = document.getElementsByClassName("tab-content");
+            for (i = 0; i < tabContent.length; i++) {
+                tabContent[i].classList.remove("active");
+            }
+            
+            tabButtons = document.getElementsByClassName("tab-btn");
+            for (i = 0; i < tabButtons.length; i++) {
+                tabButtons[i].classList.remove("active");
+            }
+            
+            document.getElementById(tabName).classList.add("active");
+            evt.currentTarget.classList.add("active");
+        }
+    </script>
+</body>
+</html> 

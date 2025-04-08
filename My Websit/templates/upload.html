@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Datei hochladen</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        .file-input-container {
+            border: 2px dashed #4a90e2;
+            border-radius: 8px;
+            padding: 20px;
+            text-align: center;
+            margin-bottom: 20px;
+            transition: all 0.3s;
+        }
+
+        .file-input-container:hover {
+            border-color: #357abd;
+            background: #f8f9fa;
+        }
+
+        .upload-icon {
+            font-size: 48px;
+            margin-bottom: 10px;
+            color: #4a90e2;
+        }
+
+        .file-input-label {
+            display: block;
+            cursor: pointer;
+            padding: 10px;
+            color: #4a90e2;
+            font-weight: 500;
+        }
+
+        .file-input-label:hover {
+            color: #357abd;
+        }
+
+        input[type="file"] {
+            display: none;
+        }
+
+        .selected-file {
+            margin-top: 10px;
+            padding: 10px;
+            background: #f8f9fa;
+            border-radius: 4px;
+            word-break: break-all;
+        }
+
+        .target-section {
+            margin-top: 20px;
+        }
+
+        .target-section select {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 16px;
+            margin-top: 5px;
+        }
+
+        .target-section label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: 500;
+        }
+    </style>
+</head>
+<body>
+    <div class="flash-messages">
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                    <div class="flash-message {{ category }}">
+                        {{ message }}
+                        <button class="close-btn" onclick="this.parentElement.remove()">&times;</button>
+                    </div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+    </div>
+
+    <div class="container">
+        <div class="card">
+            <div class="card-header">
+                <h2 class="text-center">
+                    <i class="fas fa-upload"></i>
+                    Datei hochladen
+                </h2>
+            </div>
+            <div class="card-body">
+                <form method="POST" enctype="multipart/form-data">
+                    <div class="file-input-container">
+                        <div class="upload-icon">
+                            <i class="fas fa-cloud-upload-alt"></i>
+                        </div>
+                        <label for="file" class="file-input-label">
+                            Klicken Sie hier, um eine Datei auszuwählen
+                            <input type="file" id="file" name="file" required onchange="updateFileName(this)">
+                        </label>
+                        <div id="selectedFile" class="selected-file"></div>
+                    </div>
+
+                    <div class="target-section">
+                        <label for="target_group">
+                            <i class="fas fa-folder"></i>
+                            Zielort auswählen:
+                        </label>
+                        <select id="target_group" name="target_group" class="form-control" required>
+                            {% if can_upload_public %}
+                                <option value="public" class="group-option">
+                                    <i class="fas fa-globe"></i> Öffentlich
+                                </option>
+                            {% endif %}
+                            {% for group in groups %}
+                                <option value="{{ group }}" class="group-option">
+                                    <i class="fas fa-users"></i> Gruppe: {{ group }}
+                                </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <div class="text-center mt-3">
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-upload"></i>
+                            Datei hochladen
+                        </button>
+                    </div>
+                </form>
+            </div>
+            <div class="card-footer text-center">
+                <a href="{{ url_for('home') }}" class="btn btn-secondary">
+                    <i class="fas fa-home"></i>
+                    Zurück zur Startseite
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function updateFileName(input) {
+            const selectedFile = document.getElementById('selectedFile');
+            if (input.files && input.files[0]) {
+                selectedFile.textContent = 'Ausgewählte Datei: ' + input.files[0].name;
+                selectedFile.style.display = 'block';
+            } else {
+                selectedFile.textContent = '';
+                selectedFile.style.display = 'none';
+            }
+        }
+    </script>
+</body>
+</html> 

@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dateien löschen</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+</head>
+<body>
+    <div class="flash-messages">
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                    <div class="flash-message {{ category }}">
+                        {{ message }}
+                        <button class="close-btn" onclick="this.parentElement.remove()">&times;</button>
+                    </div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+    </div>
+
+    <div class="container">
+        <div class="card">
+            <div class="card-header">
+                <h2 class="text-center">
+                    <i class="fas fa-trash-alt"></i>
+                    Dateien löschen
+                </h2>
+            </div>
+            <div class="card-body">
+                <div class="files-section">
+                    <h3>
+                        <i class="fas fa-folder-open"></i>
+                        Öffentliche Dateien
+                    </h3>
+                    {% if files.public %}
+                        <ul class="file-list">
+                            {% for file in files.public %}
+                                <li class="file-item">
+                                    <span class="file-name">
+                                        <i class="fas fa-file"></i>
+                                        {{ file }}
+                                    </span>
+                                    <form action="{{ url_for('delete_file', filename='public/' + file) }}" method="POST" style="display: inline;">
+                                        <button type="submit" class="btn btn-danger" onclick="return confirm('Sind Sie sicher, dass Sie diese Datei löschen möchten?')">
+                                            <i class="fas fa-trash-alt"></i>
+                                            Löschen
+                                        </button>
+                                    </form>
+                                </li>
+                            {% endfor %}
+                        </ul>
+                    {% else %}
+                        <p class="no-files">Keine öffentlichen Dateien verfügbar.</p>
+                    {% endif %}
+
+                    {% if files.groups %}
+                        {% for group, group_files in files.groups.items() %}
+                            <h3>
+                                <i class="fas fa-folder"></i>
+                                Gruppen-Dateien: {{ group }}
+                            </h3>
+                            <ul class="file-list">
+                                {% for file in group_files %}
+                                    <li class="file-item">
+                                        <span class="file-name">
+                                            <i class="fas fa-file"></i>
+                                            {{ file }}
+                                        </span>
+                                        <form action="{{ url_for('delete_file', filename='groups/' + group + '/' + file) }}" method="POST" style="display: inline;">
+                                            <button type="submit" class="btn btn-danger" onclick="return confirm('Sind Sie sicher, dass Sie diese Datei löschen möchten?')">
+                                                <i class="fas fa-trash-alt"></i>
+                                                Löschen
+                                            </button>
+                                        </form>
+                                    </li>
+                                {% endfor %}
+                            </ul>
+                        {% endfor %}
+                    {% endif %}
+                </div>
+            </div>
+            <div class="card-footer text-center">
+                <a href="{{ url_for('home') }}" class="btn btn-secondary">
+                    <i class="fas fa-home"></i>
+                    Zurück zur Startseite
+                </a>
+            </div>
+        </div>
+    </div>
+</body>
+</html> 

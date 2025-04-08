@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Home - File Management System</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+</head>
+<body>
+    <div class="flash-messages">
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                    <div class="flash-message {{ category }}">
+                        {{ message }}
+                        <button class="close-btn" onclick="this.parentElement.remove()">&times;</button>
+                    </div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+    </div>
+
+    <div class="container">
+        <h1>Welcome, {{ username }}!</h1>
+        
+        <!-- File Management Category -->
+        <div class="category">
+            <div class="category-header">
+                <div class="category-title">
+                    <i class="fas fa-folder category-icon"></i>
+                    File Management
+                </div>
+                <i class="fas fa-chevron-down toggle-icon"></i>
+            </div>
+            <div class="category-content">
+                {% if 'download' in user_permissions %}
+                <a href="{{ url_for('download_page') }}" class="action-link">
+                    <i class="fas fa-download"></i>
+                    Download Files
+                </a>
+                {% endif %}
+                
+                {% if 'delete' in user_permissions %}
+                <a href="{{ url_for('delete_page') }}" class="action-link">
+                    <i class="fas fa-trash-alt"></i>
+                    Delete Files
+                </a>
+                {% endif %}
+                <a href="{{ url_for('upload_page') }}" class="action-link">
+                    <i class="fas fa-upload"></i>
+                    Upload Files
+                </a>
+            </div>
+        </div>
+
+        <!-- User Management Category -->
+        <div class="category">
+            <div class="category-header">
+                <div class="category-title">
+                    <i class="fas fa-users category-icon"></i>
+                    User Management
+                </div>
+                <i class="fas fa-chevron-down toggle-icon"></i>
+            </div>
+            <div class="category-content">
+                {% if 'manage_users' in user_permissions %}
+                <a href="{{ url_for('manage_users') }}" class="action-link">
+                    <i class="fas fa-user-cog"></i>
+                    Manage Users
+                </a>
+                {% endif %}
+                
+                {% if user_role == 'admin' %}
+                <a href="{{ url_for('manage_groups') }}" class="action-link">
+                    <i class="fas fa-users-cog"></i>
+                    Manage Groups
+                </a>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Games Category -->
+        <div class="category">
+            <div class="category-header">
+                <div class="category-title">
+                    <i class="fas fa-gamepad category-icon"></i>
+                    Games
+                </div>
+                <i class="fas fa-chevron-down toggle-icon"></i>
+            </div>
+            <div class="category-content">
+                <a href="{{ url_for('gamechoose') }}" class="action-link">
+                    <i class="fas fa-dice"></i>
+                    Game Selection
+                </a>
+            </div>
+        </div>
+
+        <!-- Chat Category -->
+        <div class="category">
+            <div class="category-header">
+                <div class="category-title">
+                    <i class="fas fa-comments category-icon"></i>
+                    Chat
+                </div>
+                <i class="fas fa-chevron-down toggle-icon"></i>
+            </div>
+            <div class="category-content">
+                <a href="{{ url_for('chat') }}" class="action-link">
+                    <i class="fas fa-comment-dots"></i>
+                    Group Chat
+                </a>
+            </div>
+        </div>
+
+        <a href="{{ url_for('logout') }}" class="logout-btn">
+            <i class="fas fa-sign-out-alt"></i>
+            Logout
+        </a>
+    </div>
+
+    <script>
+        document.querySelectorAll('.category-header').forEach(header => {
+            header.addEventListener('click', () => {
+                const category = header.parentElement;
+                const content = category.querySelector('.category-content');
+                
+                // Toggle active class
+                category.classList.toggle('active');
+                content.classList.toggle('active');
+            });
+        });
+    </script>
+</body>
+</html> 

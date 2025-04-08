@@ -1,0 +1,239 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gruppen-Chat</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <style>
+        .chat-container {
+            display: flex;
+            height: calc(100vh - 200px);
+            margin: 20px;
+            gap: 20px;
+        }
+
+        .group-list {
+            width: 200px;
+            background: #f5f5f5;
+            border-radius: 10px;
+            padding: 15px;
+            overflow-y: auto;
+        }
+
+        .group-item {
+            padding: 10px;
+            margin: 5px 0;
+            background: white;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+
+        .group-item:hover {
+            background: #e0e0e0;
+        }
+
+        .group-item.active {
+            background: #4CAF50;
+            color: white;
+        }
+
+        .chat-main {
+            flex-grow: 1;
+            display: flex;
+            flex-direction: column;
+            background: #f5f5f5;
+            border-radius: 10px;
+            padding: 15px;
+        }
+
+        .chat-messages {
+            flex-grow: 1;
+            overflow-y: auto;
+            padding: 15px;
+            background: white;
+            border-radius: 10px;
+            margin-bottom: 15px;
+        }
+
+        .message {
+            margin: 10px 0;
+            padding: 10px;
+            border-radius: 5px;
+            max-width: 80%;
+        }
+
+        .message.own {
+            background: #e3f2fd;
+            margin-left: auto;
+        }
+
+        .message.other {
+            background: #f5f5f5;
+            margin-right: auto;
+        }
+
+        .message-header {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.8em;
+            color: #666;
+            margin-bottom: 5px;
+        }
+
+        .message-content {
+            word-break: break-word;
+        }
+
+        .chat-input {
+            display: flex;
+            gap: 10px;
+        }
+
+        .chat-input input {
+            flex-grow: 1;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-size: 16px;
+        }
+
+        .chat-input button {
+            padding: 10px 20px;
+            background: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+
+        .chat-input button:hover {
+            background: #45a049;
+        }
+
+        .no-group-selected {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100%;
+            font-size: 1.2em;
+            color: #666;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Gruppen-Chat</h1>
+        <div class="chat-container">
+            <div class="group-list">
+                <h2>Ihre Gruppen</h2>
+                {% for group in groups %}
+                    <div class="group-item" onclick="selectGroup('{{ group }}')">{{ group }}</div>
+                {% endfor %}
+            </div>
+            <div class="chat-main">
+                <div id="messages" class="chat-messages">
+                    <div class="no-group-selected">Bitte wählen Sie eine Gruppe aus</div>
+                </div>
+                <div class="chat-input">
+                    <input type="text" id="messageInput" placeholder="Nachricht eingeben..." disabled>
+                    <button onclick="sendMessage()" id="sendButton" disabled>Senden</button>
+                </div>
+            </div>
+        </div>
+        <a href="{{ url_for('home') }}" class="start-btn">Zurück zur Startseite</a>
+    </div>
+
+    <script>
+        let currentGroup = null;
+        const username = "{{ username }}";
+        
+        function selectGroup(group) {
+            // Aktive Gruppe markieren
+            document.querySelectorAll('.group-item').forEach(item => {
+                item.classList.remove('active');
+                if (item.textContent === group) {
+                    item.classList.add('active');
+                }
+            });
+
+            currentGroup = group;
+            document.getElementById('messageInput').disabled = false;
+            document.getElementById('sendButton').disabled = false;
+            loadMessages();
+        }
+
+        async function loadMessages() {
+            if (!currentGroup) return;
+
+            try {
+                const response = await fetch(`/api/messages/${currentGroup}`);
+                const messages = await response.json();
+                
+                const messagesDiv = document.getElementById('messages');
+                messagesDiv.innerHTML = '';
+                
+                messages.forEach(msg => {
+                    const messageDiv = document.createElement('div');
+                    messageDiv.className = `message ${msg.username === username ? 'own' : 'other'}`;
+                    
+                    messageDiv.innerHTML = `
+                        <div class="message-header">
+                            <span>${msg.username}</span>
+                            <span>${msg.timestamp}</span>
+                        </div>
+                        <div class="message-content">${msg.message}</div>
+                    `;
+                    
+                    messagesDiv.appendChild(messageDiv);
+                });
+                
+                messagesDiv.scrollTop = messagesDiv.scrollHeight;
+            } catch (error) {
+                console.error('Fehler beim Laden der Nachrichten:', error);
+            }
+        }
+
+        async function sendMessage() {
+            if (!currentGroup) return;
+
+            const input = document.getElementById('messageInput');
+            const message = input.value.trim();
+            
+            if (!message) return;
+
+            try {
+                const response = await fetch(`/api/messages/${currentGroup}`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ message }),
+                });
+
+                if (response.ok) {
+                    input.value = '';
+                    loadMessages();
+                }
+            } catch (error) {
+                console.error('Fehler beim Senden der Nachricht:', error);
+            }
+        }
+
+        // Enter-Taste zum Senden
+        document.getElementById('messageInput').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                sendMessage();
+            }
+        });
+
+        // Automatisches Nachrichten-Update
+        setInterval(() => {
+            if (currentGroup) {
+                loadMessages();
+            }
+        }, 5000);
+    </script>
+</body>
+</html> 
