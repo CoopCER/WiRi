@@ -12,7 +12,7 @@ ALLOWED_EXTENSIONS = {'txt', 'pdf', 'png', 'jpg', 'jpeg', 'gif'}
 app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024  # 16MB max-limit
 
 # Pfad zur JSON-Datei und Ordner
-USERS_FILE = 'users.json'
+USERS_FILE = os.path.join('data', 'users.json')
 FILES_DIR = os.path.join('My Websit', 'static', 'files')
 FAXFILES_DIR = os.path.join('static', 'files')
 FAXPUBLIC_DIR = os.path.join(FAXFILES_DIR, 'public')
@@ -141,19 +141,11 @@ def game2048():
     if 'username' in session or 'guest' in session:
         username = session.get('username', 'Gast')
         # Load leaderboard data
-        leaderboard = []
-        if os.path.exists('leaderboard.json'):
-            with open('leaderboard.json', 'r') as f:
+        leaderboard = {'scores': []}
+        if os.path.exists('data/2048_leaderboard.json'):
+            with open('data/2048_leaderboard.json', 'r') as f:
                 leaderboard = json.load(f)
-        return render_template('2048.html', username=username, leaderboard=leaderboard)
-    else:
-        flash('Bitte melden Sie sich an, um das Spiel zu spielen.', 'error')
-        return redirect(url_for('login'))
-
-@app.route('/tictactoe')
-def tictactoe():
-    if 'username' in session or 'guest' in session:
-        return render_template('tictactoe.html')
+        return render_template('2048.html', username=username, leaderboard=leaderboard['scores'])
     else:
         flash('Bitte melden Sie sich an, um das Spiel zu spielen.', 'error')
         return redirect(url_for('login'))
@@ -161,7 +153,13 @@ def tictactoe():
 @app.route('/flappy_bird')
 def flappy_bird():
     if 'username' in session or 'guest' in session:
-        return render_template('flappy_bird.html')
+        username = session.get('username', 'Gast')
+        # Load leaderboard data
+        leaderboard = {'scores': []}
+        if os.path.exists('data/flappy_bird_leaderboard.json'):
+            with open('data/flappy_bird_leaderboard.json', 'r') as f:
+                leaderboard = json.load(f)
+        return render_template('flappy_bird.html', username=username, leaderboard=leaderboard['scores'])
     else:
         flash('Bitte melden Sie sich an, um das Spiel zu spielen.', 'error')
         return redirect(url_for('login'))
@@ -169,15 +167,13 @@ def flappy_bird():
 @app.route('/snake')
 def snake():
     if 'username' in session or 'guest' in session:
-        return render_template('snake.html')
-    else:
-        flash('Bitte melden Sie sich an, um das Spiel zu spielen.', 'error')
-        return redirect(url_for('login'))
-
-@app.route('/doodle_jump')
-def doodle_jump():
-    if 'username' in session or 'guest' in session:
-        return render_template('doodle_jump.html')
+        username = session.get('username', 'Gast')
+        # Load leaderboard data
+        leaderboard = {'scores': []}
+        if os.path.exists('data/snake_leaderboard.json'):
+            with open('data/snake_leaderboard.json', 'r') as f:
+                leaderboard = json.load(f)
+        return render_template('snake.html', username=username, leaderboard=leaderboard['scores'])
     else:
         flash('Bitte melden Sie sich an, um das Spiel zu spielen.', 'error')
         return redirect(url_for('login'))
@@ -269,7 +265,7 @@ def register():
                     'age': age,
                     'birthdate': birthdate,
                     'role': 'user',
-                    'permissions': ['download'],
+                    'permissions': ['download','upload','manage_groups','gamechoose','chat'],
                     'groups': []
                 }
                 save_users(USERS)
@@ -402,6 +398,28 @@ def manage_users():
     else:
         flash('Bitte melden Sie sich an, um Benutzer zu verwalten.', 'error')
         return redirect(url_for('login'))
+    
+@app.route('/invite_user', methods=['GET', 'POST'])
+def invite_user():
+    if 'username' in session:
+        if request.method == 'POST':
+            username = request.form.get('username')
+            gruppe = request.form.get('gruppe')
+            if username in USERS:
+                if not gruppe in USERS[username]['groups']:
+                    USERS[username]['groups'].append(gruppe)
+                    save_users(USERS)
+                    flash('Benutzer erfolgreich eingeladen', 'success')
+                    return redirect(url_for('home'))
+                else:
+                    flash('Benutzer ist bereits in dieser Gruppe', 'error')
+                    return redirect(url_for('invite_user'))
+            else:
+                flash('Benutzer nicht gefunden', 'error')
+        return render_template('invite_user.html')
+    else:
+        flash('Bitte melden Sie sich an, um Benutzer einzuladen.', 'error')
+        return redirect(url_for('login'))
 
 @app.route('/edit_user/<username>', methods=['GET', 'POST'])
 def edit_user(username):
@@ -437,45 +455,73 @@ def edit_user(username):
 
 @app.route('/save_score', methods=['POST'])
 def save_score():
-    if 'username' in session and session['username'] != 'Gast':
-        username = session['username']
-        score = request.json.get('score', 0)
-        
-        # Load existing leaderboard
-        leaderboard = []
-        if os.path.exists('leaderboard.json'):
-            with open('leaderboard.json', 'r') as f:
-                leaderboard = json.load(f)
-        
-        # Add new score
-        leaderboard.append({
-            'username': username,
-            'score': score,
-            'date': datetime.now().strftime('%Y-%m-%d %H:%M:%S')
-        })
-        
-        # Sort by score and keep top 10
-        leaderboard.sort(key=lambda x: x['score'], reverse=True)
-        leaderboard = leaderboard[:10]
-        
-        # Save updated leaderboard
-        with open('leaderboard.json', 'w') as f:
-            json.dump(leaderboard, f, indent=4)
-        
-        return jsonify({'success': True})
-    return jsonify({'success': False, 'error': 'Not logged in'})
+    if 'username' not in session or session['username'] == 'Gast':
+        return jsonify({'error': 'Not logged in'}), 401
+
+    data = request.get_json()
+    score = data.get('score')
+    game = data.get('game', '2048')  # Default to 2048 if no game specified
+
+    if not score:
+        return jsonify({'error': 'No score provided'}), 400
+
+    # Determine which leaderboard file to use based on the game
+    leaderboard_files = {
+        '2048': 'data/2048_leaderboard.json',
+        'snake': 'data/snake_leaderboard.json',
+        'flappy_bird': 'data/flappy_bird_leaderboard.json',
+        'doodle_jump': 'data/doodle_jump_leaderboard.json',
+        'tictactoe': 'data/tictactoe_leaderboard.json'
+    }
+
+    leaderboard_file = leaderboard_files.get(game)
+    if not leaderboard_file:
+        return jsonify({'error': 'Invalid game'}), 400
+
+    # Load existing leaderboard
+    if os.path.exists(leaderboard_file):
+        with open(leaderboard_file, 'r') as f:
+            leaderboard = json.load(f)
+    else:
+        leaderboard = {'scores': []}
+
+    # Add new score
+    new_score = {
+        'username': session['username'],
+        'score': score,
+        'timestamp': datetime.now().isoformat()
+    }
+
+    # Remove any existing scores for this user
+    leaderboard['scores'] = [s for s in leaderboard['scores'] if s['username'] != session['username']]
+    
+    # Add the new score
+    leaderboard['scores'].append(new_score)
+
+    # Sort scores in descending order
+    leaderboard['scores'].sort(key=lambda x: x['score'], reverse=True)
+
+    # Keep only top 10 scores
+    leaderboard['scores'] = leaderboard['scores'][:10]
+
+    # Save updated leaderboard
+    with open(leaderboard_file, 'w') as f:
+        json.dump(leaderboard, f, indent=4)
+
+    return jsonify({'success': True})
 
 @app.route('/manage_groups')
 def manage_groups():
-    if 'username' in session and is_admin(session['username']):
+    if 'username' in session:
         groups = get_all_groups()
-        return render_template('manage_groups.html', groups=groups)
+        permissions = get_user_permissions(session['username'])
+        return render_template('manage_groups.html', groups=groups, permissions=permissions)
     flash('Sie haben keine Berechtigung zum Verwalten von Gruppen.', 'error')
     return redirect(url_for('home'))
 
 @app.route('/create_group', methods=['POST'])
 def create_group():
-    if 'username' not in session or not is_admin(session['username']):
+    if 'username' not in session:
         flash('Sie haben keine Berechtigung zum Erstellen von Gruppen.', 'error')
         return redirect(url_for('home'))
     

@@ -35,8 +35,8 @@
         }
 
         .group-item.active {
-            background: #4CAF50;
-            color: white;
+            border: 2px solid #1a73e8;
+            color: rgb(0, 0, 0);
         }
 
         .chat-main {
@@ -99,19 +99,6 @@
             font-size: 16px;
         }
 
-        .chat-input button {
-            padding: 10px 20px;
-            background: #4CAF50;
-            color: white;
-            border: none;
-            border-radius: 5px;
-            cursor: pointer;
-        }
-
-        .chat-input button:hover {
-            background: #45a049;
-        }
-
         .no-group-selected {
             display: flex;
             justify-content: center;
@@ -138,17 +125,16 @@
                 </div>
                 <div class="chat-input">
                     <input type="text" id="messageInput" placeholder="Nachricht eingeben..." disabled>
-                    <button onclick="sendMessage()" id="sendButton" disabled>Senden</button>
+                    <button class="btn-primary" onclick="sendMessage()" id="sendButton" disabled>Senden</button>
                 </div>
             </div>
         </div>
-        <a href="{{ url_for('home') }}" class="start-btn">Zurück zur Startseite</a>
+        <a href="{{ url_for('home') }}" class="btn-secondary">Zurück zur Startseite</a>
     </div>
 
     <script>
         let currentGroup = null;
         const username = "{{ username }}";
-        
         function selectGroup(group) {
             // Aktive Gruppe markieren
             document.querySelectorAll('.group-item').forEach(item => {

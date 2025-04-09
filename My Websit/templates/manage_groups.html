@@ -115,7 +115,7 @@
                     </h3>
                     <form action="{{ url_for('create_group') }}" method="POST" class="form-inline">
                         <div class="form-group">
-                            <input type="text" name="group_name" class="form-control" placeholder="Gruppenname eingeben..." required>
+                            <input type="text" name="group_name" class="form-control" style="margin-top: 30px;" placeholder="Gruppenname" required>
                         </div>
                         <button type="submit" class="btn btn-primary">
                             <i class="fas fa-plus"></i>
@@ -130,7 +130,7 @@
                         <i class="fas fa-list"></i>
                         Existierende Gruppen
                     </h3>
-                    {% if groups %}
+                    {% if groups and 'manage_groups' in permissions %}
                         <ul class="group-list">
                             {% for group in groups %}
                                 <li class="group-item">
@@ -156,6 +156,10 @@
                 <a href="{{ url_for('home') }}" class="btn btn-secondary">
                     <i class="fas fa-home"></i>
                     Zurück zur Startseite
+                </a>
+                <a href="{{ url_for('invite_user') }}" class="btn btn-secondary">
+                    <i class="fas fa-person"></i>
+                    Invite an user
                 </a>
             </div>
         </div>

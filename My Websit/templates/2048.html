@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>2048</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
         .grid {
             display: grid;
@@ -143,8 +144,8 @@
                 <div class="best-score">Best: <span id="best-score">0</span></div>
             </div>
             <div class="grid" id="grid"></div>
-            <button onclick="resetGame()" class="btn" style="margin: 20px auto; display: block;">Neues Spiel</button>
-            
+            <button onclick="resetGame()" class="btn-secondary" style="margin: 20px auto; display: block;">Neues Spiel</button>
+            <a href="{{ url_for('gamechoose') }}" class="btn-secondary" style="margin: 10px auto; display: block; width: fit-content;">Zurück</a>
             {% if username and username != 'Gast' %}
             <div class="leaderboard" id="leaderboard">
                 <h2>Bestenliste</h2>
@@ -175,7 +176,7 @@
         <div class="game-over-content">
             <h2>Game Over!</h2>
             <p>Dein Score: <span id="finalScore">0</span></p>
-            <button onclick="resetGame()" class="btn">Neues Spiel</button>
+            <button onclick="resetGame()" class="btn-secondary">Neues Spiel</button>
         </div>
     </div>
 

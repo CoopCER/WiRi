@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Benutzer bearbeiten</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
 </head>
 <body>
     <div class="flash-messages">
@@ -56,6 +57,21 @@
                                    {% if 'manage_users' in user_data.get('permissions', []) %}checked{% endif %}>
                             Benutzer verwalten
                         </label>
+                        <label class="permission-item">
+                            <input type="checkbox" name="permissions" value="manage_groups" 
+                                   {% if 'manage_groups' in user_data.get('permissions', []) %}checked{% endif %}>
+                            Gruppen verwalten
+                        </label>
+                        <label class="permission-item">
+                            <input type="checkbox" name="permissions" value="gamechoose" 
+                                   {% if 'gamechoose' in user_data.get('permissions', []) %}checked{% endif %}>
+                            Spiele auswählen
+                        </label>
+                        <label class="permission-item">
+                            <input type="checkbox" name="permissions" value="chat" 
+                                   {% if 'chat' in user_data.get('permissions', []) %}checked{% endif %}>
+                            Chat
+                        </label>
                     </div>
                 </div>
 
@@ -72,13 +88,13 @@
                     </div>
                 </div>
 
-                <button type="submit" class="save-button">
-                    <span class="btn-icon">💾</span>
+                <button type="submit" class="btn-primary">
+                    <i class="fa-solid fa-floppy-disk"></i>
                     Speichern
                 </button>
             </form>
 
-            <a href="{{ url_for('manage_users') }}" class="start-btn">Zurück zur Benutzerverwaltung</a>
+            <a href="{{ url_for('manage_users') }}" class="btn-secondary">Zurück zur Benutzerverwaltung</a>
         </div>
     </div>
 </body>
