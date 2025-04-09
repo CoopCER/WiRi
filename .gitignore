@@ -3,12 +3,14 @@ __pycache__/
 *.py[cod]
 *.env              # Ignoriert alle .env-Dateien (für Passwörter)
 venv/              # Python-Virtualenv
+data/
 
 # Nutzerdaten/Konfiguration
 secrets.json
 config.json
 database.db       # SQLite-Datenbank
 users.json    # Nutzerdaten (falls du JSON nutzt)
+leaderboard.json
 
 # Betriebssystem-spezifische Dateien
 .DS_Store         # macOS
