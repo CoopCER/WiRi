@@ -26,6 +26,28 @@ for dir_path in [FILES_DIR, PUBLIC_DIR, GROUPS_DIR, CHAT_DIR]:
     if not os.path.exists(dir_path):
         os.makedirs(dir_path)
 
+def get_group_members(group_name):
+    """Gibt eine Liste der Mitglieder einer Gruppe zurück"""
+    if os.path.exists(os.path.join(GROUPS_DIR, group_name)):
+        group_members = []
+        for user in USERS:
+            if not group_name in USERS[user]['admingroups']:
+                if group_name in USERS[user]['groups']:
+                    group_members.append(user)
+        return group_members
+    return []
+
+def get_group_admins(group_name):
+    """Gibt eine Liste der Gruppen-Admins einer Gruppe zurück"""
+    if os.path.exists(os.path.join(GROUPS_DIR, group_name)):
+        group_admins = []
+        for user in USERS:
+            if group_name in USERS[user]['admingroups']:
+                group_admins.append(user)
+        return group_admins
+    return []
+
+
 def load_users():
     """Lädt die Benutzerdaten aus der JSON-Datei"""
     if os.path.exists(USERS_FILE):
@@ -100,6 +122,12 @@ def is_group_member(username, group):
         return False
     return group in USERS[username].get('groups', [])
 
+def is_group_admin(username, group):
+    """Überprüft, ob ein Benutzer Admin einer Gruppe ist"""
+    if username not in USERS:
+        return False
+    return group in USERS[username].get('admingroups', [])
+
 def get_user_role(username):
     """Gibt die Rolle eines Benutzers zurück"""
     if username not in USERS:
@@ -111,6 +139,19 @@ def get_user_permissions(username):
     if username not in USERS:
         return []
     return USERS[username].get('permissions', [])
+
+def get_user_admingroups(username):
+    """Gibt die Gruppen zurück, in denen der Benutzer Admin ist"""
+    if username not in USERS:
+        return []
+    return USERS[username].get('admingroups', [])
+
+def get_user_groups(username):
+    """Gibt die Gruppen zurück, in denen der Benutzer Mitglied ist"""
+    if username not in USERS:
+        return []
+    return USERS[username].get('groups', [])
+
 
 def allowed_file(filename):
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
@@ -131,7 +172,12 @@ def home():
 @app.route('/gamechoose')
 def gamechoose():
     if 'username' in session or 'guest' in session:
-        return render_template('gamechoose.html')
+        user_permissions = get_user_permissions(session['username'])
+        user_role = get_user_role(session['username'])
+        return render_template('gamechoose.html', 
+                             username=session['username'], 
+                             user_permissions=user_permissions,
+                             user_role=user_role)
     else:
         flash('Bitte melden Sie sich an, um Spiele zu spielen.', 'error')
         return redirect(url_for('login'))
@@ -183,7 +229,12 @@ def download_page():
     if 'username' in session or 'guest' in session:
         username = session.get('username', None)
         files = get_available_files(username)
-        return render_template('download.html', files=files)
+        user_permissions = get_user_permissions(session['username'])
+        user_role = get_user_role(session['username'])
+        return render_template('download.html', files=files, 
+                             username=session['username'], 
+                             user_permissions=user_permissions,
+                             user_role=user_role)
     else:
         flash('Bitte melden Sie sich an, um Dateien herunterzuladen.', 'error')
         return redirect(url_for('login'))
@@ -335,17 +386,26 @@ def upload_page():
     if not can_upload:
         flash('Sie haben keine Berechtigung zum Hochladen von Dateien.', 'error')
         return redirect(url_for('home'))
-        
+    user_permissions = get_user_permissions(session['username'])
+    user_role = get_user_role(session['username'])
     return render_template('upload.html', 
                          groups=user_groups, 
-                         can_upload_public=has_permission(session['username'], 'upload'))
+                         can_upload_public=has_permission(session['username'], 'upload'),
+                         username=session['username'], 
+                         user_permissions=user_permissions,
+                         user_role=user_role)
 
 @app.route('/delete')
 def delete_page():
     if 'username' in session:
         if has_permission(session['username'], 'delete'):
             files = get_available_files()
-            return render_template('delete.html', files=files)
+            user_permissions = get_user_permissions(session['username'])
+            user_role = get_user_role(session['username'])
+            return render_template('delete.html', files=files, 
+                                 username=session['username'], 
+                                 user_permissions=user_permissions,
+                                 user_role=user_role)
         else:
             flash('Sie haben keine Berechtigung zum Löschen von Dateien.', 'error')
             return redirect(url_for('home'))
@@ -384,14 +444,27 @@ def delete_file(filename):
             
     except Exception as e:
         flash(f'Fehler beim Löschen der Datei: {str(e)}', 'error')
-    
-    return redirect(url_for('delete_page'))
+    user_permissions = get_user_permissions(session['username'])
+    user_role = get_user_role(session['username'])
+    return redirect(url_for('delete_page', 
+                            username=session['username'], 
+                            user_permissions=user_permissions,
+                            user_role=user_role))
 
 @app.route('/manage_users')
 def manage_users():
     if 'username' in session:
         if has_permission(session['username'], 'manage_users'):
-            return render_template('manage_users.html', users=USERS)
+            user_permissions = get_user_permissions(session['username'])
+            user_role = get_user_role(session['username'])
+            user_admingroups = get_user_admingroups(session['username'])
+            user_groups = get_user_groups(session['username'])
+            return render_template('manage_users.html', users=USERS, 
+                                 username=session['username'], 
+                                 user_permissions=user_permissions,
+                                 user_role=user_role,
+                                 user_admingroups=user_admingroups,
+                                 user_groups=user_groups)
         else:
             flash('Sie haben keine Berechtigung zum Verwalten von Benutzern.', 'error')
             return redirect(url_for('home'))
@@ -399,26 +472,32 @@ def manage_users():
         flash('Bitte melden Sie sich an, um Benutzer zu verwalten.', 'error')
         return redirect(url_for('login'))
     
-@app.route('/invite_user', methods=['GET', 'POST'])
-def invite_user():
+@app.route('/add_user_to_group', methods=['POST'])
+def add_user_to_group(group_name):
     if 'username' in session:
         if request.method == 'POST':
             username = request.form.get('username')
-            gruppe = request.form.get('gruppe')
+            role = request.form.get('role', 'user')
             if username in USERS:
-                if not gruppe in USERS[username]['groups']:
-                    USERS[username]['groups'].append(gruppe)
+                if not group_name in USERS[username]['groups']:
+                    USERS[username]['groups'].append(group_name)
                     save_users(USERS)
-                    flash('Benutzer erfolgreich eingeladen', 'success')
-                    return redirect(url_for('home'))
+                    if role == 'admin':
+                        USERS[username]['admingroups'].append(group_name)
+                        save_users(USERS)
+                        flash('Benutzer erfolgreich als Gruppen-Admin hinzugefügt', 'success')
+                        return redirect(url_for('manage_groups'))
+                    else:
+                        flash('Benutzer erfolgreich als Gruppenmitglied hinzugefügt', 'success')
+                        return redirect(url_for('manage_groups'))
                 else:
                     flash('Benutzer ist bereits in dieser Gruppe', 'error')
-                    return redirect(url_for('invite_user'))
+                    return redirect(url_for('manage_groups'))
             else:
                 flash('Benutzer nicht gefunden', 'error')
-        return render_template('invite_user.html')
+                return redirect(url_for('manage_groups'))
     else:
-        flash('Bitte melden Sie sich an, um Benutzer einzuladen.', 'error')
+        flash('Bitte melden Sie sich an, um Benutzer zu Gruppen hinzuzufügen.', 'error')
         return redirect(url_for('login'))
 
 @app.route('/edit_user/<username>', methods=['GET', 'POST'])
@@ -442,10 +521,15 @@ def edit_user(username):
         
         if username in USERS:
             all_groups = get_all_groups()
+            user_permissions = get_user_permissions(session['username'])
+            user_role = get_user_role(session['username'])
             return render_template('edit_user.html', 
-                                username=username, 
+                                edit_username=username,
                                 user_data=USERS[username],
-                                all_groups=all_groups)
+                                all_groups=all_groups,
+                                username=session['username'],
+                                user_permissions=user_permissions,
+                                user_role=user_role)
         else:
             flash('Benutzer nicht gefunden', 'error')
             return redirect(url_for('manage_users'))
@@ -513,11 +597,47 @@ def save_score():
 @app.route('/manage_groups')
 def manage_groups():
     if 'username' in session:
-        groups = get_all_groups()
-        permissions = get_user_permissions(session['username'])
-        return render_template('manage_groups.html', groups=groups, permissions=permissions)
+        user_admingroups = get_user_admingroups(session['username'])
+        user_permissions = get_user_permissions(session['username'])
+        user_groups = get_user_groups(session['username'])
+        user_role = get_user_role(session['username'])
+        return render_template('manage_groups.html', 
+                             username=session['username'], 
+                             user_permissions=user_permissions,
+                             user_role=user_role,
+                             admin_groups=user_admingroups,
+                             user_groups=user_groups)
     flash('Sie haben keine Berechtigung zum Verwalten von Gruppen.', 'error')
     return redirect(url_for('home'))
+
+@app.route('/edit_group/<group_name>', methods=['GET', 'POST'])
+def edit_group(group_name):
+    group_members = get_group_members(group_name)   
+    group_admins = get_group_admins(group_name)
+    if request.method == 'POST':
+        new_group_name = request.form.get('group_name')
+        if new_group_name:
+            if new_group_name != group_name:
+                os.rename(os.path.join(GROUPS_DIR, group_name), os.path.join(GROUPS_DIR, new_group_name))
+                group_name = new_group_name
+                flash('Gruppe erfolgreich umbenannt', 'success')
+                for user in USERS:
+                    if group_name in USERS[user]['groups']:
+                        USERS[user]['groups'].remove(group_name)
+                        USERS[user]['groups'].append(new_group_name)
+                    if group_name in USERS[user]['admingroups']:
+                        USERS[user]['admingroups'].remove(group_name)
+                        USERS[user]['admingroups'].append(new_group_name)
+            
+                save_users(USERS)
+    if 'username' in session and is_group_admin(session['username'], group_name):
+        return render_template('edit_group.html', group_name=group_name, group_members=group_members, group_admins=group_admins)
+    else:
+        flash('Sie haben keine Berechtigung zum Bearbeiten dieser Gruppe.', 'error')
+        return redirect(url_for('manage_groups'))
+
+
+
 
 @app.route('/create_group', methods=['POST'])
 def create_group():
@@ -534,6 +654,9 @@ def create_group():
     if os.path.exists(group_dir):
         flash('Eine Gruppe mit diesem Namen existiert bereits.', 'error')
     else:
+        USERS[session['username']]['groups'].append(group_name)
+        USERS[session['username']]['admingroups'].append(group_name)
+        save_users(USERS)
         os.makedirs(group_dir)
         flash('Gruppe erfolgreich erstellt.', 'success')
     
@@ -566,7 +689,11 @@ def chat():
     if username != 'Gast':
         user_groups = USERS[username].get('groups', [])
     
-    return render_template('chat.html', username=username, groups=user_groups)
+    user_permissions = get_user_permissions(session['username'])
+    user_role = get_user_role(session['username'])
+    return render_template('chat.html', username=username, groups=user_groups,
+                         user_permissions=user_permissions,
+                         user_role=user_role)
 
 @app.route('/api/messages/<group>', methods=['GET'])
 def get_messages(group):

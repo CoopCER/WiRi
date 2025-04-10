@@ -85,6 +85,108 @@
         {% endwith %}
     </div>
 
+    <div id="mySidenav" class="sidenav">
+        <a href="javascript:void(0)" class="closebtn" onclick="closeNav()">&times;</a>
+        <div class="category">
+            <div class="category-header">
+                <div class="category-title">
+                    <i class="fas fa-folder category-icon"></i>
+                    File Management
+                </div>
+                <i class="fas fa-chevron-down toggle-icon"></i>
+            </div>
+            <div class="category-content">
+                {% if 'download' in user_permissions %}
+                <a href="{{ url_for('download_page') }}" class="action-link">
+                    <i class="fas fa-download"></i>
+                    Download Files
+                </a>
+                {% endif %}
+                
+                {% if 'delete' in user_permissions %}
+                <a href="{{ url_for('delete_page') }}" class="action-link">
+                    <i class="fas fa-trash-alt"></i>
+                    Delete Files
+                </a>
+                {% endif %}
+                <a href="{{ url_for('upload_page') }}" class="action-link">
+                    <i class="fas fa-upload"></i>
+                    Upload Files
+                </a>
+            </div>
+        </div>
+
+        <!-- User Management Category -->
+        <div class="category">
+            <div class="category-header">
+                <div class="category-title">
+                    <i class="fas fa-users category-icon"></i>
+                    User Management
+                </div>
+                <i class="fas fa-chevron-down toggle-icon"></i>
+            </div>
+            <div class="category-content">
+                {% if 'manage_users' in user_permissions %}
+                <a href="{{ url_for('manage_users') }}" class="action-link">
+                    <i class="fas fa-user-cog"></i>
+                    Manage Users
+                </a>
+                {% endif %}
+                
+                {% if 'manage_groups' in user_permissions %}
+                <a href="{{ url_for('manage_groups') }}" class="action-link">
+                    <i class="fas fa-users-cog"></i>
+                    Manage Groups
+                </a>
+
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Games Category -->
+        <div class="category">
+            <div class="category-header">
+                <div class="category-title">
+                    <i class="fas fa-gamepad category-icon"></i>
+                    Games
+                </div>
+                <i class="fas fa-chevron-down toggle-icon"></i>
+            </div>
+            <div class="category-content">
+                {% if 'gamechoose' in user_permissions %}
+                <a href="{{ url_for('gamechoose') }}" class="action-link">
+                    <i class="fas fa-dice"></i>
+                    Game Selection
+                </a>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Chat Category -->
+        <div class="category">
+            <div class="category-header">
+                <div class="category-title">
+                    <i class="fas fa-comments category-icon"></i>
+                    Chat
+                </div>
+                <i class="fas fa-chevron-down toggle-icon"></i>
+            </div>
+            <div class="category-content">
+                {% if 'chat' in user_permissions %}
+                <a href="{{ url_for('chat') }}" class="action-link">
+                    <i class="fas fa-comment-dots"></i>
+                    Group Chat
+                </a>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+<!-- Use any element to open the sidenav -->
+    <span onclick="openNav()" class="btn-sidebar">
+        <i class="fas fa-bars"></i>
+    </span> 
+
     <div class="container">
         <div class="card">
             <div class="card-header">
@@ -153,6 +255,25 @@
                 selectedFile.style.display = 'none';
             }
         }
+        /* Set the width of the side navigation to 250px */
+        function openNav() {
+            document.getElementById("mySidenav").style.width = "250px";
+        }
+
+        /* Set the width of the side navigation to 0 */
+        function closeNav() {
+            document.getElementById("mySidenav").style.width = "0";
+        } 
+        document.querySelectorAll('.category-header').forEach(header => {
+            header.addEventListener('click', () => {
+                const category = header.parentElement;
+                const content = category.querySelector('.category-content');
+                
+                // Toggle active class
+                category.classList.toggle('active');
+                content.classList.toggle('active');
+            });
+        });
     </script>
 </body>
 </html> 
