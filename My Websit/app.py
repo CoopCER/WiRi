@@ -3,6 +3,7 @@ from datetime import datetime
 import os
 import json
 from werkzeug.utils import secure_filename
+from hashlib import md5
 
 app = Flask(__name__)
 app.secret_key = 'your_secret_key_here'  # Change this to a secure secret key
@@ -267,7 +268,7 @@ def login():
     if request.method == 'POST':
         username = request.form['username']
         password = request.form['password']
-        
+        password = md5(password.encode()).hexdigest()
         if username in USERS and USERS[username]['password'] == password:
             session['username'] = username
             flash('Erfolgreich angemeldet!', 'success')
@@ -288,9 +289,12 @@ def register():
     if request.method == 'POST':
         username = request.form['username']
         password = request.form['password']
+        password = md5(password.encode()).hexdigest()
         confirm_password = request.form['confirm_password']
+        confirm_password = md5(confirm_password.encode()).hexdigest()
         age = int(request.form['age'])
         birthdate = request.form['birthdate']
+        type = request.form['type']
         
         try:
             age = int(request.form['age'])
@@ -309,6 +313,8 @@ def register():
                 flash('Passwörter stimmen nicht überein', 'error')
             elif calculated_age != age and calculated_age != age+1:
                 flash(f'Alter stimmt nicht überein.', 'error')
+            elif type == 'administration' or type == 'both':
+                return redirect(url_for('create_work_group', username=username, password=password, age=age, birthdate=birthdate, type=type))
             else:
                 # Speichere neue Benutzerdaten mit Standardberechtigungen
                 USERS[username] = {
@@ -317,7 +323,10 @@ def register():
                     'birthdate': birthdate,
                     'role': 'user',
                     'permissions': ['download','upload','manage_groups','gamechoose','chat'],
-                    'groups': []
+                    'groups': [],
+                    'admingroups': [],
+                    'work_groups': [],
+                    'work_groups_admins': []
                 }
                 save_users(USERS)
                 flash('Registrierung erfolgreich! Sie können sich jetzt anmelden.', 'success')
@@ -329,6 +338,31 @@ def register():
                 flash('Ungültige Eingabe. Bitte überprüfen Sie Ihre Angaben.', 'error')
     
     return render_template('register.html')
+
+@app.route('/create_work_group', methods=['GET', 'POST'])
+def create_work_group(age, birthdate, type, username, password):
+    if request.method == 'POST':
+        work_group_name = request.form['work_group_name']
+        if work_group_name:
+            for user in USERS:
+                if work_group_name in user['work_groups']:
+                    flash('Gruppenname bereits vergeben', 'error')
+                    return redirect(url_for('create_work_group', username=username, password=password, age=age, birthdate=birthdate, type=type))
+                else:
+                    USERS[username] = {
+                        'password': password,
+                        'age': age,
+                        'birthdate': birthdate,
+                        'role': 'user',
+                        'permissions': ['download','upload','manage_groups','gamechoose','chat'],
+                        'groups': [],
+                        'admingroups': [],
+                        'work_groups': [work_group_name],
+                        'work_groups_admins': [work_group_name]
+                    }
+                    save_users(USERS)
+                    flash('Gruppe erfolgreich erstellt', 'success')
+                    return redirect(url_for('login'))
 
 @app.route('/logout')
 def logout():
@@ -614,6 +648,7 @@ def manage_groups():
 def edit_group(group_name):
     group_members = get_group_members(group_name)   
     group_admins = get_group_admins(group_name)
+    permissions = get_user_permissions(session['username'])
     if request.method == 'POST':
         new_group_name = request.form.get('group_name')
         if new_group_name:
@@ -631,7 +666,7 @@ def edit_group(group_name):
             
                 save_users(USERS)
     if 'username' in session and is_group_admin(session['username'], group_name):
-        return render_template('edit_group.html', group_name=group_name, group_members=group_members, group_admins=group_admins)
+        return render_template('edit_group.html', group_name=group_name, group_members=group_members, group_admins=group_admins, permissions=permissions)
     else:
         flash('Sie haben keine Berechtigung zum Bearbeiten dieser Gruppe.', 'error')
         return redirect(url_for('manage_groups'))

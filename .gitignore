@@ -4,6 +4,7 @@ __pycache__/
 *.env              # Ignoriert alle .env-Dateien (für Passwörter)
 venv/              # Python-Virtualenv
 data/
+My Websit/static/files/
 
 # Nutzerdaten/Konfiguration
 secrets.json
